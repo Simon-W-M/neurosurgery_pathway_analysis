@@ -1,0 +1,190 @@
+---
+title: "Analysis of neurosurgery subarachnoid haemorrhage pathway"
+author: "Simon Wellesley-Miller"
+date: "2025-01-04"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dpi=500)
+```
+
+## Abstract 
+
+Subarachnoid haemorrhage (SAH) presents as a sudden, severe headache that peaks within 1 to 5 minutes (thunderclap headache) and lasts more than an hour; typically alongside vomiting, photophobia, and non-focal neurological signs.  SAH is bleeding into the subarachnoid space and is an emergency and life threatening. The majority of patients enter the pathway via emergency means.
+
+Treatment is either at general acute hospitals or a number of specialist commissioned neurosurgical centres.  Decision on where to treat is covered under NICE guidance. ^1^ 
+
+This analysis looks at SUS data and explores if there are any apparent improvement opportunities.
+
+## Method
+
+The data covers the period **`r min_date`** to **`r max_date`** across **`r no_ccgs`**  different responsible Clinical Commissioning Groups (CCGs)^2^ and contains details across all age groups. 
+
+Data was taken from SUS and **`r format(nrow(data),big.mark=",")`** patient level records were returned.  This dataset was joined with population data at CCG level to derive a rate per 100,000 population, various data dictionary tables to give code descriptions,  identify neurosurgical centres and flags were added to identify key features.  Data was incomplete for some demographic and other areas.  Where this is significant it is noted in the analysis.
+ 
+**Table one categorical data**
+
+```{r table_one, echo=FALSE, fig.width=12}
+tab_one
+```
+
+## Results
+
+**Admission routes**  
+
++ We can see that broad admission routes are similar across acute and neurosurgical centres at a high level, with around 80% of admissions coming from a variety of emergency methods (as highlighted grey in table one..  A chi square test shows there is statistical difference (`r chi_ad_t`) across detailed admission routes.  
+
++ We see more direct emergency patients via ED and GP to acutes and more transfers from other providers to neurosurgical centres which is expected due to the specialist service they offer.
+
+**Discharge destinations** 
+
++ Discharge destinations are more diverse and a chi square test shows there is a statistical difference (`r chi_dis_t`) across destinations.  
+
++ The most interesting differences can be used as proxies for quality, looking at patients who return home and patients who die.  Significantly more patients return following treatment at a neurosurgical centre (63%) compared to acute (41%) and deaths are less frequent at a neurosurgical centre (15%) compared to acute (24%).
+
+**Case management**  
+
++ Case management conforms the high level admission routes from emergency settings and a very low elective route into the pathway.
+
+**National Programme of Care**  
+
++ The majority (97%) of neurosurgical centre admissions are from D03 - Adult Neurosurgery programmes.  Very few patients in acute settings are attached to national programmes of care.  
+
+**Primary diagnosis**
+
++ There are significant differences across primary diagnosis.  Most of those in an acute setting being recorded as I609: Subarachnoid haemorrhage, unspecified (76%) compared to the same code being recorded in fewer cases (30%) in a neurosurgical centre setting. 
+
+**Spell dominant procedure** 
+
++ Data quality for this item was very poor.  With few procedures being picked up within acutes.  What was apparent was that the there were significant differences in the procedures across acute and neurosurgical centre settings.  Further analysis could look at the full procedure list and try to unpick similar clinical pathways.   
+
+#### Length of stay  {.tabset}
+Lengths of stay are statistically different between provider types.  
+
+##### Density plot
+
+This LOS density plots shows the difference in distributions for LOS within care settings.  The acutes have a higher number of day cases.  Both settings clearly have large outliers and are not normally distributed as per a traditional bell curve, more a skewed exponential curve.
+
+```{r echo=FALSE, warning=FALSE,  fig.height=12, fig.width=15}
+dist_los
+```
+
+##### Statisical plot  
+A more statistical plot with a some statistical comparisons we can apply a Mann Whitney test that clearly shows the distributions of length of stay are different.  The median LOS for cute is **3 days** and in neurosurgical centres it is **7 days**.  The range is huge with a wide range of skewness.  The longest LOS in the dataset was **399 days**.
+
+
+> NOTE the log scale on this graph. 
+
+```{r echo=FALSE, warning=FALSE,  fig.height=12, fig.width=15}
+los_box
+```
+
+
+##### LOS by discharge type
+This chart compares the length of stay by discharge type, this may give an indication if certain settings have issues with discharge to certain settings, for example delays in getting social care leading the delayed transfers of care.  
+
+```{r echo=FALSE, warning=FALSE, message=FALSE,  fig.height=12, fig.width=15}
+discharge_los
+```
+
+#### Total payments {.tabset}
+We can look at payments across provider types in a similar way.
+
+##### Density plot
+
+The cost density plot shows the differences in costs across settings.  Again both setting have skewed outliers.
+```{r  echo=FALSE, warning=FALSE,  fig.height=12, fig.width=15}
+dist_pay
+```
+
+##### Statisical plot 
+
+Examining the distributions more statistically we again can see that there are statically differences between the settings.  
+
+```{r los_den, echo=FALSE, warning=FALSE,  fig.height=12, fig.width=15}
+pay_box
+```
+
+#### Length of stay and payment correlation
+
+As would be expected payments are correlated with lengths of stay.  Looking at the relationship generally we can see that some payments appear to be fixed to a point and then start occurring a a daily rate.
+
+These costs are linked to HRG codes and this charts has been filtered to the 5 most common HRG codes across each setting.  
+
+```{r  echo=FALSE, warning=FALSE,  fig.height=12, fig.width=15}
+los_pay
+```
+
+The chart shows a flat rate of cost by HRG code up until a certain length of  stay at which point costs appear to convert to a additional daily rate in a linear fashion. 
+
+We can see that the acute setting if far more likely to exceed the threshold and move into higher payments.
+
+#### Trend analysis {.tabset}
+This set of graphs breaks down admissions per month for the last 18 months of data.  These are then fed into statistical process control (SPC) charts to identify trend.  This was to explore if we can identify and significant trends in any specific CCG. 
+
+What we are specifically looking for is major rends within CCGs, a concerning increasing trend would be highlighted in yellow.  
+
+##### Acute
+```{r  echo=FALSE, warning=FALSE, fig.height=15, fig.width=15}
+spc_plot_t('Acute')
+```
+
+##### Neurosurgical centres
+```{r  echo=FALSE, warning=FALSE, fig.height=15, fig.width=15}
+spc_plot_t('Neuro centre')
+```
+
+#### Standardised admission rates per 100k population {.tabset}
+Looking over the last 3 months months these charts show the average admissions standardised to a rate by CCG population.  These charts only show those whose rates are 2 standard deviations above or below the mean rate.  This shows CCGs that have a rate that is far higher or far lower than expected.  This may indicate additional pressure in the case of high rates and unmet demand in the case of low rates.
+
+##### Acute
+```{r  echo=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+sd_rate_plot('Acute')
+```
+
+##### Neurosurgical centres
+```{r  echo=FALSE, warning=FALSE, fig.height=8, fig.width=15}
+sd_rate_plot('Neuro centre')
+```
+
+**Other analysis conducted but not presented here**
+
++ Logistic models were tested to see if there was correlation between length of stay and adverse or positive outcomes.  There were no significant findings.
+
++ Lengths of stay and costs regressions models based on available features.  No significant findings.
+
+## Conclusion
+There is clearly a difference in cost, LOS and patient outcomes across settings.  Looking at the distributions of LOS and cost, there are clearly some more extreme outliers in both settings.  tackling these outliers would be where the greatest gains could be made.
+
+The correlation plot show that costs rapidly increase once certain thresholds are reached.
+
+The statistical process control charts did not show any significant trends at a provider level.
+
+Case rates by population shows that there is considerable clinical variance across CCGs.  This may mean that some services may be over subscribed or that there is an access issue and unmet need.
+
+## Recommendations
+The first instance would be to explore the outliers for LOS and cost.  Perhaps further analysis of these patients, taking into account further demographics and co mobidities may help give further insight into these patients.  It would be worth exploring if community services could assess if these patients are suitable for community step down or virtual ward provision. This could prove to be an alternative for this pathway.
+
+There are geographic considerations and opportunity of access to consider. Looking at availability of services and potential impact of service provision and health inequalities.  The standardised rates of admissions varied geographically and so further analysis into patient demographics and public health indicators may assist in understanding appropriate levels of service provision.  It may also help identify where there is unmet need.
+
+In addition to efficiency, effectiveness and quality needs to be considered.  Exploring rates of re admissions across service provision and also further outpatient activity for follow up services would give a fuller picture of the complete pathway.  This could be linked to further patient outcome measures to ensure quality.
+
+Additional analysis with more patient stratification data and follow up pathway data may be suitable for process mining and further detailed analysis to identify bottlenecks within the pathway at an operational level.  
+
+Data quality was an issue for this analysis and perhaps the move to SNOMED codes would allow better quality information around diagnosis and procedures.  This would allow a more robust analysis of the activities being carried out and better assessment of complexity of patients. 
+
+This is a difficult problem and I would recommend further analysis to dig deeper in ensuring that we get the right patients to the right place to receive the right intervention and achieving the best possible outcomes.
+
+> **Simon Wellesley-Miller**  
+> January 2025  
+> *Code available on github*  https://github.com/Simon-W-M/neurosurgery_pathway_analysis
+
+
+^1^ https://www.nice.org.uk/guidance/ng228/documents/final-scope 
+
+
+^2^ Clinical commissioning groups (CCGs) were NHS organisations set up by the Health and Social Care Act 2012 to organise the delivery of NHS services in each of their local areas in England. On 1 July 2022, they were abolished and replaced by Integrated care systems as a result of the Health and Care Act 2022
